@@ -222,33 +222,38 @@ public class OpenIDConnectAuthMech implements AuthMechanism {
 			
 			
 			Map jwtNVP = null;
+			LoadUserData loadUser = null;
 			try {
-				LoadUserData loadUser = (LoadUserData) Class.forName(userLookupClassName).newInstance();
+				loadUser = (LoadUserData) Class.forName(userLookupClassName).newInstance();
 				jwtNVP = loadUser.loadUserAttributesFromIdP(request, response, cfg, authParams, tokenNVP);
 			} catch (Exception e) {
 				throw new ServletException("Could not load user data",e);
 			} 
 			
 			
-			
-			
-			
-			
-			if (! linkToDirectory) {
-				loadUnlinkedUser(session, noMatchOU, uidAttr, act, jwtNVP);
-				
-				as.setSuccess(true);
-
-				
+			if (jwtNVP == null) {
+				as.setSuccess(false);
 			} else {
-				lookupUser(as, session, myvd, noMatchOU, uidAttr, lookupFilter, act, jwtNVP);
+				if (! linkToDirectory) {
+					loadUnlinkedUser(session, noMatchOU, uidAttr, act, jwtNVP);
+					
+					as.setSuccess(true);
+
+					
+				} else {
+					lookupUser(as, session, myvd, noMatchOU, uidAttr, lookupFilter, act, jwtNVP);
+				}
+				
+				
+				String redirectToURL = request.getParameter("target");
+				if (redirectToURL != null && ! redirectToURL.isEmpty()) {
+					reqHolder.setURL(redirectToURL);
+				}
 			}
 			
 			
-			String redirectToURL = request.getParameter("target");
-			if (redirectToURL != null && ! redirectToURL.isEmpty()) {
-				reqHolder.setURL(redirectToURL);
-			}
+			
+			
 			
 			
 			
@@ -282,7 +287,7 @@ public class OpenIDConnectAuthMech implements AuthMechanism {
 			}
 			b.append(lookupFilter.substring(lastIndex));
 			filter = b.toString();
-		
+			logger.info("Filter : '" + filter + "'");
 		} else {
 			StringBuffer b = new StringBuffer();
 			String userParam = (String) jwtNVP.get(uidAttr);
@@ -298,7 +303,7 @@ public class OpenIDConnectAuthMech implements AuthMechanism {
 			
 			String root = act.getRoot();
 			if (root == null || root.trim().isEmpty()) {
-				root = "o=Tremolo";
+				root = GlobalEntries.getGlobalEntries().getConfigManager().getCfg().getLdapRoot();
 			}
 			
 			LDAPSearchResults res = myvd.search(root, 2, filter, new ArrayList<String>());

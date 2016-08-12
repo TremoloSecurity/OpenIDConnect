@@ -31,6 +31,9 @@ public class LoadJWTFromAccessToken implements LoadUserData {
 			HashMap<String, Attribute> authParams, Map accessToken) throws Exception {
 		
 		String tokenName = authParams.get("jwtTokenAttributeName").getValues().get(0);
+		
+		String hd = authParams.get("hd").getValues().get(0);
+		
 		//"id_token"
 		String jwt = (String) accessToken.get(tokenName);
 		
@@ -44,6 +47,17 @@ public class LoadJWTFromAccessToken implements LoadUserData {
 		jwtNVP = com.cedarsoftware.util.io.JsonReader.jsonToMaps(new String(Base64.decodeBase64(jwt.substring(firstPeriod + 1,lastPeriod))));
 
 			
+		if (hd != null && ! hd.isEmpty()) {
+			String emailAddress = (String) jwtNVP.get("email");
+			if (emailAddress != null && ! emailAddress.isEmpty()) {
+				if (! emailAddress.endsWith(hd)) {
+					return null;
+				}
+			} else {
+				return null;
+			}
+		}
+		
 		return jwtNVP;
 	}
 
