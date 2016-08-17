@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2015 Tremolo Security, Inc.
+ * Copyright 2015, 2016 Tremolo Security, Inc.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,6 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.logging.log4j.Logger;
 
 import com.tremolosecurity.config.util.ConfigManager;
 import com.tremolosecurity.saml.Attribute;
@@ -27,6 +28,8 @@ import com.tremolosecurity.unison.proxy.auth.openidconnect.sdk.LoadUserData;
 
 public class LoadJWTFromAccessToken implements LoadUserData {
 
+	static Logger logger = org.apache.logging.log4j.LogManager.getLogger(LoadJWTFromAccessToken.class.getName());
+	
 	public Map loadUserAttributesFromIdP(HttpServletRequest request, HttpServletResponse response, ConfigManager cfg,
 			HashMap<String, Attribute> authParams, Map accessToken) throws Exception {
 		
@@ -43,8 +46,12 @@ public class LoadJWTFromAccessToken implements LoadUserData {
 		//Since we are getting the token from a valid source, no need to check the signature? (probably not really true, need to figure out what sig to check against)
 		int firstPeriod = jwt.indexOf('.');
 		int lastPeriod = jwt.lastIndexOf('.');
+
+		String json = new String(Base64.decodeBase64(jwt.substring(firstPeriod + 1,lastPeriod)));
 		
-		jwtNVP = com.cedarsoftware.util.io.JsonReader.jsonToMaps(new String(Base64.decodeBase64(jwt.substring(firstPeriod + 1,lastPeriod))));
+		logger.info("json : '" + json + "'");
+		
+		jwtNVP = com.cedarsoftware.util.io.JsonReader.jsonToMaps(json);
 
 			
 		if (hd != null && ! hd.isEmpty()) {

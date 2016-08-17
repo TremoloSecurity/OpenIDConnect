@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2015 Tremolo Security, Inc.
+ * Copyright 2015, 2016 Tremolo Security, Inc.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -328,16 +328,36 @@ public class OpenIDConnectAuthMech implements AuthMechanism {
 				
 				for (Object o : jwtNVP.keySet()) {
 					String s = (String) o;
-					String val = jwtNVP.get(s).toString();
+					
+					
+					
+					Object v = jwtNVP.get(s);
+					
 					Attribute attr = authInfo.getAttribs().get(s);
 					if (attr == null) {
-						attr = new Attribute(s,val);
+						attr = new Attribute(s);
 						authInfo.getAttribs().put(attr.getName(), attr);
 					}
 					
-					if (! attr.getValues().contains(val)) {
-						attr.getValues().add(val);
+					
+					if (v instanceof String) {
+						String val = (String) v;
+						if (! attr.getValues().contains(val)) {
+							attr.getValues().add(val);
+						}
+					} else if (v instanceof Object[]) {
+						for (Object vo : ((Object[])v)) {
+							String vv = (String) vo;
+							if (vv != null && ! attr.getValues().contains(vv)) {
+								attr.getValues().add(vv);
+							}
+						}
 					}
+					
+					
+					
+					
+					
 							
 					
 					
@@ -369,7 +389,7 @@ public class OpenIDConnectAuthMech implements AuthMechanism {
 			Map jwtNVP) {
 		String uid = (String) jwtNVP.get(uidAttr);
 		StringBuffer dn = new StringBuffer();
-		dn.append(uidAttr).append('=').append(uid).append(",ou=").append(noMatchOU).append(",o=Tremolo");
+		dn.append(uidAttr).append('=').append(uid).append(",ou=").append(noMatchOU).append(",").append(GlobalEntries.getGlobalEntries().getConfigManager().getCfg().getLdapRoot());
 		
 		AuthInfo authInfo = new AuthInfo(dn.toString(),(String) session.getAttribute(ProxyConstants.AUTH_MECH_NAME),act.getName(),act.getLevel());
 		((AuthController) session.getAttribute(ProxyConstants.AUTH_CTL)).setAuthInfo(authInfo);
