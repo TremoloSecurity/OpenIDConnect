@@ -17,18 +17,33 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.Logger;
+import org.jose4j.jws.JsonWebSignature;
+import org.jose4j.lang.JoseException;
+
 import com.tremolosecurity.proxy.results.CustomResult;
 
 public class OAuth2BearerTokenResult implements CustomResult {
 
+	static Logger logger = org.apache.logging.log4j.LogManager.getLogger(OAuth2BearerTokenResult.class);
+	
 	public String getResultValue(HttpServletRequest request, HttpServletResponse response) throws ServletException {
 		StringBuffer b = new StringBuffer();
-		String token = (String) request.getSession().getAttribute("kcBearerToken");
+		
+		JsonWebSignature token = (JsonWebSignature) request.getSession().getAttribute("bearerJWS");
+		
 		if (token == null) {
-			token = "NO TOKEN FOUND";
+			return "Bearer NO TOKEN FOUND";
 		}
 		
-		b.append("Bearer ").append(token);
+		
+		
+		
+		try {
+			b.append("Bearer ").append(token.getCompactSerialization());
+		} catch (JoseException e) {
+			logger.error("Could not serialize token",e);
+		}
 		
 		return b.toString();
 		
